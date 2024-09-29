@@ -22,7 +22,6 @@ const connection = require('../db');
 
 router.get('/getIdnName', (req, res) => {
 	const query = 'SELECT VendorId, VendorName FROM VendorDetails';
-
 	connection.query(query, (err, results) => {
 		if (err) {
 			console.error('Error fetching vendor details: ', err);
