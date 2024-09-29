@@ -4,6 +4,7 @@ const connection = require("../db");
 const { sendEmployeeEmail } = require("./emailService");
 const multer = require("multer");
 const upload = multer({ dest: "uploads/" });
+const crypto = require('crypto');
 
 (async () => {
 	await connection.query(
@@ -13,8 +14,8 @@ const upload = multer({ dest: "uploads/" });
 			EmployeeGender VARCHAR(20), 
 			EmployeeAddress VARCHAR(255), 
 			EmployeeCity VARCHAR(100), 
-			EmployeeLatitude VARCHAR(100), 
-			EmployeeLongitude VARCHAR(100), 
+			Latitude VARCHAR(100), 
+			Longitude VARCHAR(100), 
 			EmployeeEmail VARCHAR(100), 
 			EmployeeContact VARCHAR(20), 
 			EmployeeEmergencyContact VARCHAR(20), 
@@ -39,15 +40,15 @@ router.post("/upload", upload.single("file"), (req, res) => {
 		const EmployeePassword = generateRandomPassword();
 		const query = `
       INSERT INTO EmployeeDetails 
-      (EmployeeId, EmployeeName, EmployeeGender, EmployeeAddress, EmployeeCity, EmployeeLatitude, EmployeeLongitude, EmployeeEmail, EmployeeContact, EmployeeEmergencyContact, EmployeePassword, EmployeeImage) 
+      (EmployeeId, EmployeeName, EmployeeGender, EmployeeAddress, EmployeeCity, Latitude, Longitude, EmployeeEmail, EmployeeContact, EmployeeEmergencyContact, EmployeePassword, EmployeeImage) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE 
         EmployeeName = VALUES(EmployeeName),
         EmployeeGender = VALUES(EmployeeGender),
         EmployeeAddress = VALUES(EmployeeAddress),
         EmployeeCity = VALUES(EmployeeCity),
-        EmployeeLatitude = VALUES(EmployeeLatitude),
-        EmployeeLongitude = VALUES(EmployeeLongitude),
+        Latitude = VALUES(Latitude),
+        Longitude = VALUES(Longitude),
         EmployeeEmail = VALUES(EmployeeEmail),
         EmployeeContact = VALUES(EmployeeContact),
         EmployeeEmergencyContact = VALUES(EmployeeEmergencyContact),
@@ -61,8 +62,8 @@ router.post("/upload", upload.single("file"), (req, res) => {
 			row.EmployeeGender,
 			row.EmployeeAddress,
 			row.EmployeeCity,
-			row.EmployeeLatitude,
-			row.EmployeeLongitude,
+			row.Latitude,
+			row.Longitude,
 			row.EmployeeEmail,
 			row.EmployeeContact,
 			row.EmployeeEmergencyContact,
@@ -118,13 +119,12 @@ router.post("/upload", upload.single("file"), (req, res) => {
 router.post("/addEmp", (req, res) => {
 	const {
 		EmployeeImage,
-		EmployeeId,
 		EmployeeName,
 		EmployeeGender,
 		EmployeeAddress,
 		EmployeeCity,
-		EmployeeLatitude,
-		EmployeeLongitude,
+		Latitude,
+		Longitude,
 		EmployeeEmail,
 		EmployeeContact,
 		EmployeeEmergencyContact,
@@ -133,15 +133,15 @@ router.post("/addEmp", (req, res) => {
 
 	const query = `
    INSERT INTO EmployeeDetails 
-   (EmployeeId, EmployeeName, EmployeeGender, EmployeeAddress, EmployeeCity, EmployeeLatitude, EmployeeLongitude, EmployeeEmail, EmployeeContact, EmployeeEmergencyContact, EmployeePassword, EmployeeImage) 
-   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+   (EmployeeName, EmployeeGender, EmployeeAddress, EmployeeCity, Latitude, Longitude, EmployeeEmail, EmployeeContact, EmployeeEmergencyContact, EmployeePassword, EmployeeImage) 
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE 
       EmployeeName = VALUES(EmployeeName),
       EmployeeGender = VALUES(EmployeeGender),
       EmployeeAddress = VALUES(EmployeeAddress),
       EmployeeCity = VALUES(EmployeeCity),
-      EmployeeLatitude = VALUES(EmployeeLatitude),
-      EmployeeLongitude = VALUES(EmployeeLongitude),
+      Latitude = VALUES(Latitude),
+      Longitude = VALUES(Longitude),
       EmployeeEmail = VALUES(EmployeeEmail),
       EmployeeContact = VALUES(EmployeeContact),
       EmployeeEmergencyContact = VALUES(EmployeeEmergencyContact),
@@ -150,13 +150,12 @@ router.post("/addEmp", (req, res) => {
    `;
 
 	const values = [
-		EmployeeId,
 		EmployeeName,
 		EmployeeGender,
 		EmployeeAddress,
 		EmployeeCity,
-		EmployeeLatitude,
-		EmployeeLongitude,
+		Latitude,
+		Longitude,
 		EmployeeEmail,
 		EmployeeContact,
 		EmployeeEmergencyContact,
@@ -172,7 +171,6 @@ router.post("/addEmp", (req, res) => {
 			console.log("Data inserted/updated successfully.");
 
 			const employeeData = {
-				EmployeeId,
 				EmployeeName,
 				EmployeeEmail,
 				EmployeePassword,
@@ -197,8 +195,8 @@ router.put("/updateEmpById/:empId", (req, res) => {
 		EmployeeGender,
 		EmployeeAddress,
 		EmployeeCity,
-		EmployeeLatitude,
-		EmployeeLongitude,
+		Latitude,
+		Longitude,
 		EmployeeContact,
 		EmployeeEmergencyContact,
 	} = req.body;
@@ -209,8 +207,8 @@ router.put("/updateEmpById/:empId", (req, res) => {
 			EmployeeGender = ?, 
 			EmployeeAddress = ?, 
 			EmployeeCity = ?, 
-			EmployeeLatitude = ?, 
-			EmployeeLongitude = ?, 
+			Latitude = ?, 
+			Longitude = ?, 
 			EmployeeContact = ?, 
 			EmployeeEmergencyContact = ?
 		WHERE EmployeeId = ?
@@ -221,19 +219,18 @@ router.put("/updateEmpById/:empId", (req, res) => {
 		EmployeeGender,
 		EmployeeAddress,
 		EmployeeCity,
-		EmployeeLatitude,
-		EmployeeLongitude,
+		Latitude,
+		Longitude,
 		EmployeeContact,
 		EmployeeEmergencyContact,
 		empId,
 	];
-
+	
 	connection.query(query, values, (err, result) => {
 		if (err) {
 			console.error("Error updating employee details:", err);
 			return res.status(500).send("Database update failed");
 		}
-
 		res.send({ message: "Employee details updated successfully!" });
 	});
 });
@@ -247,8 +244,8 @@ router.delete("/deleteEmpById/:empId", (req, res) => {
 	});
 });
 
-router.get("/getAllEmp", (req, res) => {
-	const query = "SELECT * FROM EmployeeDetails";
+router.get("/getAllEmp", (req, res) => {	
+	const query = "SELECT * FROM employeeDetails";
 	connection.query(query, (err, result) => {
 		if (err) return res.status(500).send(err);
 		res.send(result);

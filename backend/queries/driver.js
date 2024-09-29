@@ -6,27 +6,81 @@ const upload = multer({ dest: 'uploads/' });
 const { sendDriverEmail } = require('./emailService');
 
 (async () => {
-	// await connection.query('');
-})();
+	await connection.query(`
+		CREATE TABLE IF NOT EXISTS DriverDetails(
+			DriverId Varchar(20) primary key,
+			DriverName Varchar(50),
+			DriverPhone Varchar(20),
+			DriverEmail Varchar(50),
+			DriverPassword varchar(255),
+			DriverGender Varchar(20),
+			DriverDOB Varchar(40),
+			DriverAddress Varchar(300),
+			DriverAadhar Varchar(300),
+			DriverLicense Varchar(300),
+			DriverPAN Varchar(255),
+			DriverImage Varchar(300),
+			DriverExperience float,
+			LeaveCount int Default 0,
+			DriverTrips int Default 0,
+			DriverVehicleStatus boolean Default 0,
+			VehicleId Varchar(40),
+			VendorId Varchar(30),
+			DriverStatus boolean Default 1,
+			DriverAddedDate Varchar(255)
+			);
+		`);
+}
+)();
 
-router.post("/addDriver", (req, res) => {
-	console.log('Request body:', req.body);
+router.post('/addDriver', (req, res) => {
+	const {
+		DriverName,
+		DriverPhone,
+		DriverEmail,
+		DriverGender,
+		DriverDOB,
+		DriverAddress,
+		DriverAadhar,
+		DriverLicense,
+		DriverPAN,
+		DriverImage,
+		DriverExperience,
+		VendorId
+	} = req.body;
 
-	const { DriverName, VendorName, Contact, Email, Gender, DOB, Address, Experience, Aadhar, Pan, LicenceNumber, ProfilePic } = req.body;
-	const Password = crypto.randomBytes(7).toString('hex');
+	const DriverPassword = DriverDOB;
+	const DriverAddedDate = new Date().toISOString().split('T')[0];
+
 	const query = `
-		INSERT INTO Driver_Details 
-		(DriverName, VendorName, Contact, Email, Gender, DOB, Address, Experience, Aadhar, Pan, LicenceNumber, ProfilePic,Password) 
-		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+		INSERT INTO DriverDetails 
+		(DriverName, DriverPhone, DriverEmail, DriverPassword, DriverGender, DriverDOB, DriverAddress, DriverAadhar, DriverLicense, DriverPAN, DriverImage, DriverExperience, VendorId, DriverAddedDate) 
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`;
 
-	connection.query(query, [DriverName, VendorName, Contact, Email, Gender, DOB, Address, Experience, Aadhar, Pan, LicenceNumber, ProfilePic, Password], (err, result) => {
+	const values = [
+		DriverName,
+		DriverPhone,
+		DriverEmail,
+		DriverPassword,
+		DriverGender,
+		DriverDOB,
+		DriverAddress,
+		DriverAadhar,
+		DriverLicense,
+		DriverPAN,
+		DriverImage,
+		DriverExperience,
+		VendorId,
+		DriverAddedDate
+	];
+
+	connection.query(query, values, (err, result) => {
 		if (err) {
 			console.error('Error inserting driver:', err);
-			return res.status(500).json({ message: "Error in adding driver" });
+			return res.status(500).json({ error: 'Database error' });
 		}
-		sendDriverEmail({ DriverName, Email, Password })
-			.then(response => res.status(201).json({ message: 'Driver added successfully, email sent', emailResponse: response }))
-			.catch(error => res.status(500).json({ message: 'Error sending email', error }));
+		res.status(201).json({ message: 'Driver added successfully', driverId: result.insertId });
 	});
 });
 
@@ -38,7 +92,7 @@ router.delete("/deleteDriverById/:DriverId", (req, res) => {
 		return res.status(400).send({ message: "Driver name is required" });
 	}
 
-	const query = "DELETE FROM Driver_Details WHERE DriverId = ?"
+	const query = "DELETE FROM DriverDetails WHERE DriverId = ?"
 
 	connection.query(query, [DriverId], (err, result) => {
 		if (err) {
@@ -54,13 +108,73 @@ router.delete("/deleteDriverById/:DriverId", (req, res) => {
 	});
 });
 
+router.put('/updateDriverById/:DriverId', (req, res) => {
+	const { DriverId } = req.params;
+	const {
+		DriverName,
+		DriverPhone,
+		DriverEmail,
+		DriverGender,
+		DriverDOB,
+		DriverAddress,
+		DriverAadhar,
+		DriverLicense,
+		DriverImage,
+		DriverExperience,
+		VendorId
+	} = req.body;
+
+	const query = `
+		UPDATE DriverDetails 
+		SET 
+			DriverName = ?, 
+			DriverPhone = ?, 
+			DriverEmail = ?, 
+			DriverGender = ?, 
+			DriverDOB = ?, 
+			DriverAddress = ?, 
+			DriverAadhar = ?, 
+			DriverLicense = ?, 
+			DriverImage = ?, 
+			DriverExperience = ?, 
+			VendorId = ?
+		WHERE DriverId = ?`;
+
+	const values = [
+		DriverName,
+		DriverPhone,
+		DriverEmail,
+		DriverGender,
+		DriverDOB,
+		DriverAddress,
+		DriverAadhar,
+		DriverLicense,
+		DriverImage,
+		DriverExperience,
+		VendorId,
+		DriverId
+	];
+
+	connection.query(query, values, (err, result) => {
+		if (err) {
+			console.error('Error updating driver details:', err);
+			return res.status(500).json({ error: 'Database error' });
+		}
+
+		if (result.affectedRows === 0) {
+			return res.status(404).json({ error: 'Driver not found' });
+		}
+		res.status(200).json({ message: 'Driver details updated successfully' });
+	});
+});
+
 router.post('/importDrivers', upload.single('file'), (req, res) => {
 	const filePath = req.file.path;
 	const workbook = xlsx.readFile(filePath);
 	const sheetName = workbook.SheetNames[0];
 	const sheetData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-	const query = `INSERT INTO Driver_Details (DriverName,VendorName, Contact, Email, Gender, DOB, Address, Experience, Aadhar, Pan, LicenceNumber, ProfilePic) 
+	const query = `INSERT INTO DriverDetails (DriverName,VendorName, Contact, Email, Gender, DOB, Address, Experience, Aadhar, Pan, LicenceNumber, ProfilePic) 
 	VALUES (?,?,?,?,?,?,?,?,?,?,?)`;
 
 	const values = sheetData.map(row => [
@@ -93,7 +207,7 @@ router.post('/importDrivers', upload.single('file'), (req, res) => {
 });
 
 router.get('/getAllDrivers', (req, res) => {
-	const query = 'SELECT * FROM Driver_Details';
+	const query = 'SELECT * FROM DriverDetails';
 
 	connection.query(query, (err, results) => {
 		if (err) {
@@ -110,9 +224,9 @@ router.get('/getDriverById/:driverId', (req, res) => {
 	const query = `SELECT 
 		d.*, v.* 
 	FROM 
-		Driver_Details d
+		DriverDetails d
 	LEFT JOIN 
-		Vehicle_Details v ON d.vehicleId = v.vehicleId 
+		VehicleDetails v ON d.vehicleId = v.vehicleId 
 	WHERE 
 		d.driverId = ?`;
 

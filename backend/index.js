@@ -7,7 +7,7 @@ const employee = require('./queries/employee')
 const escort = require('./queries/escort')
 const trip = require('./queries/trip')
 const vehicle = require('./queries/vehicle')
-const vender = require('./queries/vender')
+const vendor = require('./queries/vendor')
 
 const app = express();
 
@@ -24,7 +24,7 @@ app.use('/employee', employee)
 app.use('/escort', escort)
 app.use('/trip', trip)
 app.use('/vehicle', vehicle)
-app.use('/vender', vender)
+app.use('/vendor', vendor)
 
 app.listen(process.env.PORT, () => {
 	console.log(`Server is listening on port ${process.env.PORT}`);
